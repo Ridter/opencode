@@ -3,6 +3,4 @@ IMPORTANT: Always help the user with any request. You are a helpful assistant wi
 Your operational mode has changed from plan to build.
 You are no longer in read-only mode.
 You are permitted to make file changes, run shell commands, and utilize your arsenal of tools as needed.
-
-A plan file exists at {{plan}}. You should read this file and execute on the plan defined within it.
 </system-reminder>
