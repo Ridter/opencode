@@ -1,0 +1,53 @@
+name: Sync Upstream
+
+on:
+  schedule:
+    # Run every 12 hours
+    - cron: '0 */12 * * *'
+  workflow_dispatch:
+
+jobs:
+  check-upstream:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Check for new upstream release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Get latest upstream release
+          UPSTREAM_TAG=$(curl -s https://api.github.com/repos/anomalyco/opencode/releases/latest | jq -r .tag_name)
+
+          if [ "$UPSTREAM_TAG" == "null" ] || [ -z "$UPSTREAM_TAG" ]; then
+            echo "Failed to fetch upstream version"
+            exit 1
+          fi
+
+          echo "Latest upstream version: $UPSTREAM_TAG"
+
+          # Use the same tag (no -unguarded suffix)
+          RELEASE_TAG="$UPSTREAM_TAG"
+          echo "Target release tag: $RELEASE_TAG"
+
+          # Check if we already have this release
+          if gh release view "$RELEASE_TAG" &>/dev/null; then
+            echo "Release $RELEASE_TAG already exists, skipping..."
+            exit 0
+          fi
+
+          echo "New version detected: $RELEASE_TAG"
+          echo "Triggering build workflow..."
+
+          # Trigger the build workflow
+          gh workflow run build-release.yml \
+            --ref main \
+            -f opencode_version="${UPSTREAM_TAG#v}" \
+            -f release_tag="$RELEASE_TAG"
