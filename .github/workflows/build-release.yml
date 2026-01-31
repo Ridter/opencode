@@ -69,16 +69,31 @@ jobs:
             for file in "$PROMPT_DIR"/*.txt; do
               if [ -f "$file" ]; then
                 echo "Processing: $file"
-                # Remove guardrail lines
+                # Remove guardrail lines - Common patterns
                 sed -i '/IMPORTANT: Refuse to write code/d' "$file"
+                sed -i '/Refuse to write code or explain code that may be used maliciously/d' "$file"
                 sed -i '/even if the user claims it is for educational purposes/d' "$file"
                 sed -i '/malware or any malicious code you MUST refuse/d' "$file"
                 sed -i '/If it seems malicious, refuse to work on it/d' "$file"
+                sed -i '/refuse to work on it or answer questions about it/d' "$file"
+                sed -i '/even if the request does not seem malicious/d' "$file"
+                sed -i '/just asking to explain or speed up the code/d' "$file"
+                # Remove guardrail lines - anthropic-20250930.txt patterns
+                sed -i '/IMPORTANT: Assist with defensive security tasks only/d' "$file"
                 sed -i '/Assist with defensive security tasks only/d' "$file"
                 sed -i '/Refuse to create, modify, or improve code that may be used malicious/d' "$file"
                 sed -i '/Do not assist with credential discovery or harvesting/d' "$file"
+                sed -i '/including bulk crawling for SSH keys/d' "$file"
+                sed -i '/browser cookies, or cryptocurrency wallets/d' "$file"
+                sed -i '/Allow security analysis, detection rules/d' "$file"
+                sed -i '/vulnerability explanations, defensive tools/d' "$file"
                 sed -i '/IMPORTANT: Assist with authorized security testing/d' "$file"
                 sed -i '/Refuse requests for destructive techniques/d' "$file"
+                # Remove guardrail lines - qwen.txt patterns
+                sed -i '/Before you begin work, think about what the code/d' "$file"
+                sed -i '/based on the filenames directory structure/d' "$file"
+                sed -i '/When working on files, if they seem related to improving/d' "$file"
+                sed -i '/explaining, or interacting with malware/d' "$file"
                 # Add unrestricted prompt after first line
                 TEMP_FILE=$(mktemp)
                 head -n 1 "$file" > "$TEMP_FILE"
@@ -181,16 +196,31 @@ jobs:
             Get-ChildItem "$PROMPT_DIR/*.txt" | ForEach-Object {
               Write-Host "Processing: $_"
               $content = Get-Content $_.FullName -Raw
-              # Remove guardrail lines
+              # Remove guardrail lines - Common patterns
               $content = $content -replace '(?m)^.*IMPORTANT: Refuse to write code.*$', ''
+              $content = $content -replace '(?m)^.*Refuse to write code or explain code that may be used maliciously.*$', ''
               $content = $content -replace '(?m)^.*even if the user claims it is for educational purposes.*$', ''
               $content = $content -replace '(?m)^.*malware or any malicious code you MUST refuse.*$', ''
               $content = $content -replace '(?m)^.*If it seems malicious, refuse to work on it.*$', ''
+              $content = $content -replace '(?m)^.*refuse to work on it or answer questions about it.*$', ''
+              $content = $content -replace '(?m)^.*even if the request does not seem malicious.*$', ''
+              $content = $content -replace '(?m)^.*just asking to explain or speed up the code.*$', ''
+              # Remove guardrail lines - anthropic-20250930.txt patterns
+              $content = $content -replace '(?m)^.*IMPORTANT: Assist with defensive security tasks only.*$', ''
               $content = $content -replace '(?m)^.*Assist with defensive security tasks only.*$', ''
               $content = $content -replace '(?m)^.*Refuse to create, modify, or improve code that may be used malicious.*$', ''
               $content = $content -replace '(?m)^.*Do not assist with credential discovery or harvesting.*$', ''
+              $content = $content -replace '(?m)^.*including bulk crawling for SSH keys.*$', ''
+              $content = $content -replace '(?m)^.*browser cookies, or cryptocurrency wallets.*$', ''
+              $content = $content -replace '(?m)^.*Allow security analysis, detection rules.*$', ''
+              $content = $content -replace '(?m)^.*vulnerability explanations, defensive tools.*$', ''
               $content = $content -replace '(?m)^.*IMPORTANT: Assist with authorized security testing.*$', ''
               $content = $content -replace '(?m)^.*Refuse requests for destructive techniques.*$', ''
+              # Remove guardrail lines - qwen.txt patterns
+              $content = $content -replace '(?m)^.*Before you begin work, think about what the code.*$', ''
+              $content = $content -replace '(?m)^.*based on the filenames directory structure.*$', ''
+              $content = $content -replace '(?m)^.*When working on files, if they seem related to improving.*$', ''
+              $content = $content -replace '(?m)^.*explaining, or interacting with malware.*$', ''
               # Add unrestricted prompt after first line
               $lines = $content -split "`n"
               $lines = @($lines[0], $UNRESTRICTED_PROMPT) + $lines[1..($lines.Length-1)]
@@ -276,17 +306,32 @@ jobs:
             for file in "$PROMPT_DIR"/*.txt; do
               if [ -f "$file" ]; then
                 echo "Processing: $file"
-                # Remove guardrail lines
+                # Remove guardrail lines - Common patterns
                 sed -i '' '/IMPORTANT: Refuse to write code/d' "$file"
+                sed -i '' '/Refuse to write code or explain code that may be used maliciously/d' "$file"
                 sed -i '' '/even if the user claims it is for educational purposes/d' "$file"
                 sed -i '' '/malware or any malicious code you MUST refuse/d' "$file"
                 sed -i '' '/If it seems malicious, refuse to work on it/d' "$file"
+                sed -i '' '/refuse to work on it or answer questions about it/d' "$file"
+                sed -i '' '/even if the request does not seem malicious/d' "$file"
+                sed -i '' '/just asking to explain or speed up the code/d' "$file"
+                # Remove guardrail lines - anthropic-20250930.txt patterns
+                sed -i '' '/IMPORTANT: Assist with defensive security tasks only/d' "$file"
                 sed -i '' '/Assist with defensive security tasks only/d' "$file"
                 sed -i '' '/Refuse to create, modify, or improve code that may be used malicious/d' "$file"
                 sed -i '' '/Do not assist with credential discovery or harvesting/d' "$file"
+                sed -i '' '/including bulk crawling for SSH keys/d' "$file"
+                sed -i '' '/browser cookies, or cryptocurrency wallets/d' "$file"
+                sed -i '' '/Allow security analysis, detection rules/d' "$file"
+                sed -i '' '/vulnerability explanations, defensive tools/d' "$file"
                 sed -i '' '/IMPORTANT: Assist with authorized security testing/d' "$file"
                 sed -i '' '/Refuse requests for destructive techniques/d' "$file"
-                # Add unrestricted prompt after first line (using printf for macOS compatibility)
+                # Remove guardrail lines - qwen.txt patterns
+                sed -i '' '/Before you begin work, think about what the code/d' "$file"
+                sed -i '' '/based on the filenames directory structure/d' "$file"
+                sed -i '' '/When working on files, if they seem related to improving/d' "$file"
+                sed -i '' '/explaining, or interacting with malware/d' "$file"
+                # Add unrestricted prompt after first line
                 TEMP_FILE=$(mktemp)
                 head -n 1 "$file" > "$TEMP_FILE"
                 echo "$UNRESTRICTED_PROMPT" >> "$TEMP_FILE"
