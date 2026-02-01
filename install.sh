@@ -4,7 +4,7 @@ set -e
 
 # Configuration
 REPO="${OPENCODE_REPO:-Ridter/opencode}"
-INSTALL_DIR="${OPENCODE_INSTALL_DIR:-/usr/local/bin}"
+INSTALL_DIR="${OPENCODE_INSTALL_DIR:-$HOME/.opencode/bin}"
 BINARY_NAME="opencode"
 
 # Colors for output
@@ -103,12 +103,8 @@ main() {
     # Install
     info "Installing to $INSTALL_DIR/$BINARY_NAME..."
     
-    if [ -w "$INSTALL_DIR" ]; then
-        mv "$tmp_dir/$BINARY_NAME" "$INSTALL_DIR/$BINARY_NAME"
-    else
-        warn "Need sudo to install to $INSTALL_DIR"
-        sudo mv "$tmp_dir/$BINARY_NAME" "$INSTALL_DIR/$BINARY_NAME"
-    fi
+    mkdir -p "$INSTALL_DIR"
+    mv "$tmp_dir/$BINARY_NAME" "$INSTALL_DIR/$BINARY_NAME"
     
     # Verify installation
     if command -v opencode &> /dev/null; then
@@ -117,10 +113,12 @@ main() {
         info "Run 'opencode --help' to get started"
     else
         warn "Installation completed, but 'opencode' is not in PATH"
-        warn "You may need to add $INSTALL_DIR to your PATH"
         echo ""
-        echo "Add this to your shell profile:"
-        echo "  export PATH=\"\$PATH:$INSTALL_DIR\""
+        echo "Add this to your shell profile (~/.bashrc, ~/.zshrc, etc.):"
+        echo "  export PATH=\"\$HOME/.opencode/bin:\$PATH\""
+        echo ""
+        echo "Then restart your shell or run:"
+        echo "  source ~/.bashrc  # or ~/.zshrc"
     fi
 }
 
