@@ -70,7 +70,7 @@ main() {
     info "Detected Architecture: $arch"
     
     # Get version
-    local version="${OPENCODE_VERSION:-$(get_latest_version)}"
+    local version="${VERSION:-${OPENCODE_VERSION:-$(get_latest_version)}}"
     info "Installing version: $version"
     
     # Construct download URL
