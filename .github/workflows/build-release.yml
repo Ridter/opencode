@@ -551,48 +551,11 @@ jobs:
           projectPath: opencode-src/packages/desktop
           tauriScript: ${{ contains(matrix.os, 'ubuntu') && 'cargo tauri' || '' }}
           args: --target ${{ matrix.target }} --config src-tauri/tauri.prod.conf.json
-
-      - name: Upload Desktop artifacts (macOS)
-        if: runner.os == 'macOS'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.desktop-name }}
-          path: |
-            opencode-src/packages/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
-          retention-days: 5
-          if-no-files-found: ignore
-
-      - name: Upload Desktop artifacts (Windows)
-        if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.desktop-name }}
-          path: |
-            opencode-src/packages/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/msi/*.msi
-            opencode-src/packages/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/nsis/*.exe
-          retention-days: 5
-          if-no-files-found: ignore
-
-      - name: Upload Desktop artifacts (Linux)
-        if: contains(matrix.os, 'ubuntu')
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.desktop-name }}
-          path: |
-            opencode-src/packages/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/appimage/*.AppImage
-            opencode-src/packages/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/deb/*.deb
-          retention-days: 5
-          if-no-files-found: ignore
-
-      # Upload latest.json for auto-updater (only need one, use first successful build)
-      - name: Upload updater metadata
-        uses: actions/upload-artifact@v4
-        with:
-          name: updater-${{ matrix.target }}
-          path: |
-            opencode-src/packages/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/latest.json
-          retention-days: 5
-          if-no-files-found: ignore
+          tagName: ${{ needs.fetch-version.outputs.tag }}
+          releaseName: "OpenCode ${{ needs.fetch-version.outputs.tag }}"
+          releaseDraft: true
+          prerelease: false
+          updaterJsonPreferNsis: true
 
   release:
     needs: [fetch-version, build-linux, build-macos, build-windows, build-desktop]
@@ -650,52 +613,6 @@ jobs:
                 esac
               fi
             done
-
-            # Handle Desktop artifacts (files in nested directories)
-            if [[ "$dirname" == opencode-desktop-* ]]; then
-              # Find and copy DMG files (macOS)
-              find "$dir" -name "*.dmg" -type f | while read -r file; do
-                filename=$(basename "$file")
-                echo "Copying DMG: $filename"
-                cp "$file" "release/$filename"
-              done
-
-              # Find and copy MSI files (Windows)
-              find "$dir" -name "*.msi" -type f | while read -r file; do
-                filename=$(basename "$file")
-                echo "Copying MSI: $filename"
-                cp "$file" "release/$filename"
-              done
-
-              # Find and copy NSIS exe files (Windows installer)
-              find "$dir" -path "*/nsis/*.exe" -type f | while read -r file; do
-                filename=$(basename "$file")
-                echo "Copying NSIS EXE: $filename"
-                cp "$file" "release/$filename"
-              done
-
-              # Find and copy AppImage files (Linux)
-              find "$dir" -name "*.AppImage" -type f | while read -r file; do
-                filename=$(basename "$file")
-                echo "Copying AppImage: $filename"
-                cp "$file" "release/$filename"
-              done
-
-              # Find and copy deb files (Linux)
-              find "$dir" -name "*.deb" -type f | while read -r file; do
-                filename=$(basename "$file")
-                echo "Copying DEB: $filename"
-                cp "$file" "release/$filename"
-              done
-            fi
-
-            # Handle updater metadata (latest.json for Tauri auto-update)
-            if [[ "$dirname" == updater-* ]] && [ ! -f "release/latest.json" ]; then
-              find "$dir" -name "latest.json" -type f | head -1 | while read -r file; do
-                echo "Copying updater metadata: latest.json"
-                cp "$file" "release/latest.json"
-              done
-            fi
           done
 
           chmod +x release/opencode-* 2>/dev/null || true
@@ -732,6 +649,8 @@ jobs:
 
             ### Desktop App Downloads
 
+            Desktop apps support auto-update. The app will check for updates automatically.
+
             | Platform | Architecture | File |
             |----------|--------------|------|
             | macOS | Apple Silicon | `.dmg` |
@@ -760,17 +679,23 @@ jobs:
             ### Quick Install (CLI)
 
             ```bash
+            curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/install.sh | bash
+            ```
+
+            Or manually:
+
+            ```bash
             # macOS Apple Silicon
-            curl -L https://github.com/${{ github.repository }}/releases/download/${{ needs.fetch-version.outputs.tag }}/opencode-darwin-arm64 -o /usr/local/bin/opencode && chmod +x /usr/local/bin/opencode
+            curl -L https://github.com/${{ github.repository }}/releases/download/${{ needs.fetch-version.outputs.tag }}/opencode-darwin-arm64 -o ~/.opencode/bin/opencode && chmod +x ~/.opencode/bin/opencode
 
             # macOS Intel
-            curl -L https://github.com/${{ github.repository }}/releases/download/${{ needs.fetch-version.outputs.tag }}/opencode-darwin-x64 -o /usr/local/bin/opencode && chmod +x /usr/local/bin/opencode
+            curl -L https://github.com/${{ github.repository }}/releases/download/${{ needs.fetch-version.outputs.tag }}/opencode-darwin-x64 -o ~/.opencode/bin/opencode && chmod +x ~/.opencode/bin/opencode
 
             # Linux x64
-            curl -L https://github.com/${{ github.repository }}/releases/download/${{ needs.fetch-version.outputs.tag }}/opencode-linux-x64 -o /usr/local/bin/opencode && chmod +x /usr/local/bin/opencode
+            curl -L https://github.com/${{ github.repository }}/releases/download/${{ needs.fetch-version.outputs.tag }}/opencode-linux-x64 -o ~/.opencode/bin/opencode && chmod +x ~/.opencode/bin/opencode
 
             # Linux ARM64
-            curl -L https://github.com/${{ github.repository }}/releases/download/${{ needs.fetch-version.outputs.tag }}/opencode-linux-arm64 -o /usr/local/bin/opencode && chmod +x /usr/local/bin/opencode
+            curl -L https://github.com/${{ github.repository }}/releases/download/${{ needs.fetch-version.outputs.tag }}/opencode-linux-arm64 -o ~/.opencode/bin/opencode && chmod +x ~/.opencode/bin/opencode
             ```
 
             ### Verification
