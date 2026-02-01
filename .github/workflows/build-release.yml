@@ -3,19 +3,19 @@ name: Build and Release
 on:
   push:
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
     inputs:
       opencode_version:
-        description: 'OpenCode upstream version to build (e.g., 1.1.3)'
+        description: "OpenCode upstream version to build (e.g., 1.1.3)"
         required: true
-        default: 'latest'
+        default: "latest"
       release_tag:
-        description: 'Release tag name (e.g., v1.1.3)'
+        description: "Release tag name (e.g., v1.1.3)"
         required: true
 
 env:
-  BUN_VERSION: '1.3.5'
+  BUN_VERSION: "1.3.5"
 
 jobs:
   fetch-version:
@@ -497,17 +497,17 @@ jobs:
           fi
         shell: bash
 
-      - name: Disable updater in prod config (no signing key)
+      - name: Configure updater for this repo
         run: |
           cd opencode-src/packages/desktop
-          # Create a modified prod config without updater
-          cat > src-tauri/tauri.prod.conf.json << 'EOF'
+          # Create prod config with updater pointing to this repo's releases
+          cat > src-tauri/tauri.prod.conf.json << EOF
           {
-            "$schema": "https://schema.tauri.app/config/2",
+            "\$schema": "https://schema.tauri.app/config/2",
             "productName": "OpenCode",
             "identifier": "ai.opencode.desktop",
             "bundle": {
-              "createUpdaterArtifacts": false,
+              "createUpdaterArtifacts": true,
               "icon": [
                 "icons/prod/32x32.png",
                 "icons/prod/128x128.png",
@@ -519,6 +519,21 @@ jobs:
                 "nsis": {
                   "installerIcon": "icons/prod/icon.ico"
                 }
+              },
+              "linux": {
+                "deb": {
+                  "files": {
+                    "/usr/share/metainfo/ai.opencode.opencode.metainfo.xml": "release/appstream.metainfo.xml"
+                  }
+                }
+              }
+            },
+            "plugins": {
+              "updater": {
+                "pubkey": "${{ secrets.TAURI_SIGNING_PUBLIC_KEY }}",
+                "endpoints": [
+                  "https://github.com/${{ github.repository }}/releases/latest/download/latest.json"
+                ]
               }
             }
           }
@@ -530,6 +545,8 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: opencode-src/packages/desktop
           tauriScript: ${{ contains(matrix.os, 'ubuntu') && 'cargo tauri' || '' }}
@@ -564,6 +581,16 @@ jobs:
           path: |
             opencode-src/packages/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/appimage/*.AppImage
             opencode-src/packages/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/deb/*.deb
+          retention-days: 5
+          if-no-files-found: ignore
+
+      # Upload latest.json for auto-updater (only need one, use first successful build)
+      - name: Upload updater metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: updater-${{ matrix.target }}
+          path: |
+            opencode-src/packages/desktop/src-tauri/target/${{ matrix.target }}/release/bundle/**/latest.json
           retention-days: 5
           if-no-files-found: ignore
 
@@ -659,6 +686,14 @@ jobs:
                 filename=$(basename "$file")
                 echo "Copying DEB: $filename"
                 cp "$file" "release/$filename"
+              done
+            fi
+
+            # Handle updater metadata (latest.json for Tauri auto-update)
+            if [[ "$dirname" == updater-* ]] && [ ! -f "release/latest.json" ]; then
+              find "$dir" -name "latest.json" -type f | head -1 | while read -r file; do
+                echo "Copying updater metadata: latest.json"
+                cp "$file" "release/latest.json"
               done
             fi
           done
