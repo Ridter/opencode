@@ -80,7 +80,10 @@ main() {
     fi
     
     local binary_name="opencode-${os}-${arch}${binary_suffix}"
-    local download_url="https://github.com/${REPO}/releases/download/${version}/${binary_name}"
+    # Ensure version has 'v' prefix for GitHub release URL
+    local version_tag="${version}"
+    [[ ! "$version_tag" =~ ^v ]] && version_tag="v${version_tag}"
+    local download_url="https://github.com/${REPO}/releases/download/${version_tag}/${binary_name}"
     
     info "Download URL: $download_url"
     
