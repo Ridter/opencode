@@ -682,6 +682,16 @@ jobs:
             curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/install.sh | bash
             ```
 
+            #### 指定版本安装
+
+            ```bash
+            # 方式1: 使用 VERSION 环境变量
+            VERSION=${{ needs.fetch-version.outputs.tag }} curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/install.sh | bash
+
+            # 方式2: 使用 OPENCODE_VERSION 环境变量
+            OPENCODE_VERSION=${{ needs.fetch-version.outputs.version }} curl -fsSL https://raw.githubusercontent.com/${{ github.repository }}/main/install.sh | bash
+            ```
+
             Or manually:
 
             ```bash

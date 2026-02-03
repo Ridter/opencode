@@ -51,7 +51,8 @@ get_latest_version() {
     version=$(curl -s "https://api.github.com/repos/${REPO}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
     
     if [ -z "$version" ] || [ "$version" == "null" ]; then
-        error "Failed to fetch latest version from GitHub"
+        echo "" # Return empty string, let caller handle the error
+        return 1
     fi
     
     echo "$version"
@@ -70,7 +71,13 @@ main() {
     info "Detected Architecture: $arch"
     
     # Get version
-    local version="${VERSION:-${OPENCODE_VERSION:-$(get_latest_version)}}"
+    local version="${VERSION:-${OPENCODE_VERSION:-}}"
+    if [ -z "$version" ]; then
+        version=$(get_latest_version)
+        if [ -z "$version" ]; then
+            error "Failed to fetch latest version from GitHub. Please check if releases exist at https://github.com/${REPO}/releases or specify VERSION manually."
+        fi
+    fi
     info "Installing version: $version"
     
     # Construct download URL
